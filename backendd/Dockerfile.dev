@@ -1,0 +1,28 @@
+# Dockerfile para desenvolvimento do backend com Node.js e steamcmd
+FROM node:18
+
+WORKDIR /app
+
+# Copia package.json e instala dependências do Node.js
+COPY package*.json ./
+RUN npm install
+
+# Instalar dependências necessárias e preparar para o steamcmd
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    apt-add-repository non-free && \
+    add-apt-repository -U http://deb.debian.org/debian -c non-free-firmware -c non-free && \
+    dpkg --add-architecture i386 && \
+    apt-get update && \
+    echo steam steam/question select "I AGREE" | debconf-set-selections && \
+    DEBIAN_FRONTEND=noninteractive apt install -y steamcmd && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copia o restante do projeto
+COPY . .
+
+# Reconstruir módulos nativos, como node-pty
+RUN npm rebuild node-pty
+
+# Comando padrão ao iniciar o container
+CMD ["npm", "run", "start:dev"]
